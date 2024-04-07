@@ -10,14 +10,14 @@ Airbnb, Inc operates an online marketplace for lodging, primarily homestays for 
 README:
 The purpose of this project is to predict the effects of different parameters recorded in the data to predict mortality of the patient. By predicting so the physicians can determine high risk patients and can take better care of them thus helping them survive.
 
-## Airline safety dashboard using Power BI DSC 640
+## Airline safety dashboard using Power BI 
 README:
 The project is  the responsibility of looking into media reports that flying is no longer a safe mode of transportation as a data analyst for an airline corporation and develop a high-level dashboard with important data pertaining to airline safety to assist internal stakeholders in addressing this.As part of this project, we have created several visualizations, Dashboards, infographic and identified trends that support that airline travel is safer than cars. 
 
 
 
 
-## Auction items data processing pipeline DSC 650
+## Auction items data processing pipeline 
 READ ME:
 In this term-end project, several big data technologies like Apache NiFi,Kafka, Hadoop & Hive were used to create a data engineering pipeline to find the top bidders who should be invited for auction in each category. 
 
