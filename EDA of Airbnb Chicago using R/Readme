@@ -1,1 +1,3 @@
-
+## Exploratory Data Analysis of AirBnB rental price affecting nearby housing in Chicago - Using R programming
+README:
+Airbnb, Inc operates an online marketplace for lodging, primarily homestays for vacation rentals, and tourism activities.The problem here I am addressing is how the the prices of Chicago AirBnB rentals affect the prices of the nearby neighborhood rent prices. Data science algorithm will help here to predict the prices of Chicago AirBnB rentals and also help to understand the correlation between the prices of Chicago AirBnB rentals and neighborhood rent prices.
