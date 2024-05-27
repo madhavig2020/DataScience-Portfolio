@@ -1,0 +1,373 @@
+---
+title: "Final Step3 - Analysis of Airbnb Rental Prices"
+author: "Ghanta, Madhavi"
+date: "2023-05-31"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Problem Statement
+
+Airbnb is an online marketplace that connects people who want to rent out their homes with people who are looking for accommodations in that locale.It currently covers more than 100,000 cities and 220 countries worldwide. It largely does not own dwellings or real estate of its own; instead, it collects fees by acting as a broker between those with dwellings to rent and those looking to book lodging. The company has been criticized for a direct correlation between increases in the number of its listings and increases in nearby rent prices and creating nuisances for those living near leased properties. The problem here I am addressing is how the the prices of Chicago AirBnB rentals affect the prices of the nearby neighborhood rent prices. Data science algorithm will help here to predict the prices of Chicago AirBnB rentals and also help to understand the correlation between the prices of Chicago AirBnB rentals and neighborhood rent prices.
+
+### Research Questions
+
+-   What are the Airbnb rental prices for different areas in Chicago?
+-   What is the correlation between the Airbnb rental prices and Chicago neighborhood rental prices?
+-   What are the average rental prices by the neighborhood?
+-   What are the average rental prices for Airbnb by the neighborhood?
+-   What type of houses are most rented on Airbnb?
+-   What is the monthly rent from the Airbnb properties?
+-   What are the rental property options by neighborhood?
+-   How much profit does Airbnb make monthly?
+
+### Approach
+
+Approach involves analyzing data to discover correlations, patterns and create machine learning model to predict how AirBnB rentals prices affects the nearby housing rental prices in Chicago based of various factors i.e. neighborhood, zip code, Airbnb prices, number of reviews, housing rental area, housing rental units etc. 1. The approach is to start with finding the most important predictors for the regression model. 2. Once the predictors are decided then I will look into the R2 , Adjusted R2 statistics, p-value. 3. I will then calculate the betas for the predictors in the regression model. It will tell me how the 1 standard deviation change in predictor will impact dependent (response) variable. 4. I will then calculate confidence intervals which indicate that the estimates how the model are likely to be representative of the true population values. 5. I will then perform an analysis of variance on all models to compare performance of different models. 6. I will then calculate standardized residuals, the leverage, cooks distance, and covariance rations 7. At last I will check if the regression model unbiased and then will select the unbiased model for the prediction of the Airbnb prices
+
+### How your approach addresses (fully or partially) the problem.
+
+Approach focus on to give enough data inputs to be able to address the problem completely. The approach will help to predict direct correlation between increases in the number of its listings and increases in nearby rent prices. It will help uncover various data patterns to answer multiple research questions. It will help understand cause and effect relationship between Airbnb prices and nearby housing rental prices. It also intends to develop a model to predict Airbnb prices based on given variables.
+
+## Packages
+
+## Load the readxl package
+
+
+```{r include = FALSE}
+library(readxl) 
+## Load the plyr package
+library(dplyr) 
+## Load the plyr package 
+library(plyr)
+## Load the tidyverse package 
+library(tidyverse)
+library(ggplot2)
+
+```
+
+## Set the working directory to the root of your DSC 520 directory
+```{r}
+setwd("C:/Users/mghan/Documents/dsc520/FinalProject")
+
+#Above data set contains information across US cities
+#Filtering the data based on city==Chicago as we are focusing on Chicago
+library(readr)
+airbnb_chicago_df <- readr::read_csv('airbnb-listings.csv')
+str(airbnb_chicago_df)
+summary(airbnb_chicago_df)
+```
+
+```{r}
+## Load the Affordable rental housing dataset
+
+housing_df=read.csv("C:/Users/mghan/Documents/dsc520/FinalProject/Affordable_Rental_Housing_Developments.csv")
+glimpse(housing_df)
+
+## Load the Average rent Chicago neighborhood dataset
+
+avg_rent_df <- read_excel("C:/Users/mghan/Documents/dsc520/FinalProject/Average_rent_Chicago_neighbourhood.xlsx")
+glimpse(avg_rent_df)
+
+#Merge the airbnb df with rental housing df based on neighbourhood 
+final_1_df <- left_join(airbnb_chicago_df,housing_df,by="neighbourhood_cleansed") 
+
+glimpse(final_1_df)
+head(final_1_df)
+
+#Merge the above df with Average rent df based on neighbourhood 
+final_2_df <-inner_join(x=final_1_df,y=avg_rent_df,
+                        by=c("neighbourhood_cleansed")) 
+glimpse(final_2_df)
+
+```
+#By looking at the data we can say that #Airbnb data 
+# 1. Variable id is just an identifier and we can ignore it. 
+# 2. We can factor the field room.type - Private room,Entire home/apt,Hotel 
+# room, Shared room 
+# 3. We can drop the host.id and host.name,neighbourhood.group,name fields 
+# from the dataset 
+# 4. We can drop fields like last.review,number.of.reviews, 
+# reviews.per.month,calculated.host.listings.count
+
+#Average rent Chicago neighborhood data 
+# 5. We can drop Property Name,Phone Number,Management Company,Units,Zip Codes 
+# from the # dataset
+
+#Average rent Chicago neighborhood data 
+# 6. rename the Average Rent to Average_Rent
+
+```{r}
+# Apply above transformation to the dataframe
+
+final_df <- subset(final_2_df, select = c("neighbourhood_cleansed", "latitude",
+                                          "longitude", "room_type", "price","minimum_nights", "availability_365", "property_type", 
+                                          "Zip.Code","X.Coordinate", "Y.Coordinate", "Latitude","Longitude", "Average Rent") ) 
+glimpse(final_df)
+
+#Rename Average Rent to Average_Rent 
+colnames(final_df)[14] <- "Average_Rent"
+
+# Checking the summary of data set to gauge the value range of each numerical
+# variable
+
+summary(final_df)
+
+```
+# 7. Range of values prices are varies from 0 to 10000.
+# It looks like there are outliers in the field.
+
+# 8. Range of values minimum_nights varies from 1 to 365.
+
+# It looks like there are outliers in the field.
+
+# 9. Range of values for availability_365 varies from 0 to 365.
+
+# 10. Range of values for Average_Rent varies from 675 to 2350.
+```{r}
+#Calculate the 30 days price for airbnb property. 
+final_df$airbnb_30_days_price=final_df$price * 30
+summary(final_df)
+
+#Check missing values 
+apply(final_df, 2, function(x) any(is.na(x)))
+```
+#It looks like there are some missing values for
+#X.Coordinate ,Y.Coordinate, Latitude, Longitude, Zip.Code
+
+```{r}
+## 2.What does the final data set look like?
+
+glimpse(final_df)
+```
+## 3. Questions for future steps.
+
+# a) Need to learn how to visualize more than two variables.
+
+# b) Need to learn application of variable scaling and techniques.
+
+# c) Need to learn how lm() function takes care of variable scaling.
+
+# d) Need to learn correlation between different variables.
+
+## 4.What information is not self-evident?
+
+# To uncover new information in the data that is not self-evident -
+
+# 1. visualize data to uncover patterns and trends
+
+# 2. correlation among variables
+
+# 3. Check data distribution of variables
+
+# 4. detect outliers and influencial cases
+
+# 5.What are different ways you could look at this data?
+```{r}
+# Checking relation between airbnb_30_days_price and Average_Rent using
+
+ggplot()
+library(ggplot2) 
+ggplot(data = final_df, aes(x = airbnb_30_days_price,
+                               y = Average_Rent)) + geom_point() + 
+  geom_smooth(fill=NA)
+
+# Checking relation between neighbourhood_cleansed and Average_Rent using
+
+ggplot()
+library(ggplot2)
+ggplot(data = final_df, aes(y = neighbourhood_cleansed, x = Average_Rent))+ geom_point() + geom_smooth(fill=NA)
+
+# Checking relation between neighbourhood_cleansed and airbnb_30_days_price using
+
+ggplot() 
+library(ggplot2) 
+ggplot(data = final_df, aes(y = neighbourhood_cleansed,
+                            x = airbnb_30_days_price)) + geom_point() + geom_smooth(fill=NA)
+
+#We can see that there is relationship between neighbourhood and prices 
+# Checking if data distribution of numeric variables is normal 
+# combining pipe operator between dplyr transformation and ggplot
+final_df %>% select(airbnb_30_days_price, Zip.Code, Average_Rent) %>% 
+  gather()%>%
+ ggplot(., aes(sample = value)) + 
+  stat_qq() +
+  facet_wrap(vars(key), scales ='free_y')
+                                                           
+
+#None of the variables looks normally distributed
+ggplot(data = final_df, aes(x = neighbourhood_cleansed , y = airbnb_30_days_price)) +
+  geom_boxplot() + ylab("airbnb_30_days_price")                          
+```
+# We can see that there are so many outliers for many neighbourhoods
+# thus data is not normally distributed
+```{r}
+ggplot(data = final_df, aes(x = room_type , y = airbnb_30_days_price)) + 
+  geom_boxplot() + ylab("30 days price")
+```
+
+# We can see that there are so many outliers for room_type
+
+# thus data is not normally distributed
+```{r}
+ggplot(data = final_df, aes(x = property_type , y = Average_Rent)) + 
+  geom_boxplot() + ylab("Property Type")
+```
+
+# We can see that there are so many outliers for Property_Type
+# thus data is not normally distributed
+
+```{r}
+# 6.How do you plan to slice and dice the data?
+
+unique(final_df[c("Zip.Code")])
+
+unique(final_df[c("neighbourhood_cleansed")])
+```
+
+#I think need to slice the datasets by zip codes or neighbourhood to analyze 
+# the data in more granular level
+# We can see that there are so many outliers for many neighbourhoods
+# thus data is not normally distributed
+```{r}
+ggplot(data = final_df, aes(x = room_type , y = airbnb_30_days_price)) +
+  geom_boxplot() + ylab("30 days price")
+
+# We can see that there are so many outliers for room_type
+# thus data is not normally distributed
+ggplot(data = final_df, aes(x = property_type , y = Average_Rent)) +
+  geom_boxplot() + ylab("Property Type")
+
+# We can see that there are so many outliers for Property_Type
+# thus data is not normally distributed
+
+# 6.How do you plan to slice and dice the data?
+unique(final_df[c("Zip.Code")])
+
+unique(final_df[c("neighbourhood_cleansed")])
+
+#I think need to slice the datasets by zip codes or neighbourhood to analyze 
+# the data in more granular level
+
+# 7.How could you summarize your data to answer key questions?
+library("ggpubr")
+
+ggscatter(final_df, x = "airbnb_30_days_price", y = "Average_Rent", 
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Miles/(US) gallon", ylab = "Weight (1000 lbs)")
+
+#a) What are the Airbnb rental prices for different areas in Chicago?
+ggplot(data=final_df,aes(y=neighbourhood_cleansed)) + geom_histogram(stat = "count")
+
+ggplot(aes(y=neighbourhood_cleansed,x=airbnb_30_days_price),data=final_df)+
+  geom_point()
+```
+
+# From graph it looks like "West town" have major number of airbnb properties
+# Also the prices of "West town" properties are high for airbnb rental.
+
+# b) What is the correlation between the Airbnb rental prices and Chicago 
+# neighborhood rent prices?
+ ```{r} 
+cor(final_df$airbnb_30_days_price,final_df$Average_Rent)
+
+# It is evident from the plots that there is positive correlation between 
+# airbnb prices and average rent
+
+# c)What are the average rent prices by the neighborhood?
+ggplot(aes(y=neighbourhood_cleansed,x=mean(final_df$Average_Rent)),data=final_df)+
+  geom_point()
+
+#The average rent price is ~1600 per month
+# d)What are the average rent prices for Airbnb by the neighborhood?
+
+ggplot(aes(y=neighbourhood_cleansed,x=mean(airbnb_30_days_price)),data=final_df)+
+  geom_point()
+```
+
+#The average airbnb price is ~ 5400 per month
+```{r}
+# e) What type of houses are most rented on Airbnb?
+ggplot(data=final_df,aes(y=room_type)) + geom_histogram(stat ="count")
+
+#It looks like Entire home/apt are most rented on Airbnb
+
+# f)What is the monthly rent from the Airbnb properties?
+df1 <-final_df%>%select(neighbourhood_cleansed, airbnb_30_days_price, Average_Rent)
+df1 %>% group_by(neighbourhood_cleansed) %>% summarize(mean_airbnb_30_days_price =
+                                                mean(airbnb_30_days_price))
+```
+#Airbnb monrthly average rent is 5462.622
+
+# 9)Do you plan on incorporating any machine learning techniques to answer 
+# your research questions? Explain.
+# performing multiple linear regression
+# splitting the data into training and test set
+```{r}
+library(caTools)
+mymodel_1 <-lm(airbnb_30_days_price ~ neighbourhood_cleansed,data = final_df)
+summary(mymodel_1)
+
+mymodel_2 <-lm(airbnb_30_days_price ~ Zip.Code,data = final_df)
+summary(mymodel_2)
+```
+##How you addressed this problem statement
+# 1.	Data research and collection – I have used the inside Airbnb website to
+#gather the data for AibBnb listing data, Affordable rental housing data, and
+#Average rent Chicago neighborhood data.
+#Each row of the data represents properties listed on Airbnb, their prices,
+#neighborhood, zip codes, and average rents in that neighborhood. The data is
+#focused on ‘Chicago’ city.
+#2.	Data preparation and cleansing – Identified that there were some missing 
+#data in the datasets. I have removed those records which have NA. I have also 
+#dropped some of the fields that are not used for the analysis.I have merged the
+#3 datasets into one final dataset for the analysis.
+
+##Analysis
+#EDA (Exploratory data analysis) 
+#– I did the correlation analysis between variables and noted the strengths and
+#weaknesses of relationships.
+#a)	I found that zip codes, neighborhood, price, average rent, and property type
+#are good predictors for the analysis. Once the predictors are decided then I 
+#looked into the R2 , Adjusted R2 statistics, and p-value.
+#b)	Visualize different aspects of the data to gain more knowledge.
+#c)	I then calculated the betas for the predictors in the regression model.
+#It shows me how the 1 standard deviation change in predictor will impact the 
+#dependent (response) variable.
+#d)	I then calculated confidence intervals which indicate that the estimates of 
+#how the model is likely to be representative of the true population values.
+#e)	I then performed an analysis of variance on all models to compare the 
+#performance of different models.
+#f)	I then calculated standardized residuals, the leverage, cooks’ distance, and
+#covariance rations
+#g)	At last, I checked if the regression model was unbiased.
+
+##Implications to consumer
+#The implication of the research is that the prices of the housing rental have 
+#direct impact on AirBnB listing in that same neighborhood. The recommendation
+#from research is that there should be federal rule on how much the housing 
+#prices should increase year by year.
+#Also AirBnB should consider the neighborhood housing prices when deciding 
+#prices for their listed property.
+
+
+##Limitations of the analysis
+#1)	The research is limited to Chicago city only.
+#2)	The research needs more sample size for accurate analysis.
+#3)	The research datasets are gathered from only one source.
+#4)	The research is limited based on neighborhood. There are other factors need 
+#to be considered for more analysis.
+#5)	The research is done using linear regression. There is a scope for 
+#improvement by fitting other ML algorithms.
+
+##Concluding Remarks
+#The research helped in applying the concepts and knowledge of the statistics 
+#gained in the course.
+# research project provides hands-on experience in a real-life case study.
+#The research methods defined in the courses were very helpful.
+#The visualization technique learned through this case study can be used in 
+#another research too.
