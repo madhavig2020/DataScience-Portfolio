@@ -2,11 +2,6 @@
 
 This is a short portfolio of projects accomplished over the course of the Masters in Data Science at Bellevue University.  Please visit my Portfolio here:[ Madhavi Ghanta-Portfolio](https://mghanta99.wixsite.com/madhavi-portfolio)
 
-About
-
-Work
-
-Contact
 
 # Projects
 
