@@ -8,6 +8,8 @@ This is a short portfolio of projects accomplished over the course of the Master
 
 [Resume](https://github.com/madhavig2020/DataScience-Portfolio/blob/main/Resume)
 
+[Certificates](https://github.com/madhavig2020/Certificates)
+
 # Projects
 
 
